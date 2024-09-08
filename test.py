@@ -23,10 +23,51 @@ def input_data():
     try:
         team_num = int(input("Enter the team number: "))
         season = int(input("Enter the season year (e.g., 2023): "))
-        main_function(team_num, season)
+        option = input("would you like to recieve event data or match data (e/m): ").lower()
+        if option == 'm':
+          main_function(team_num, season)
+        elif option == 'e':
+          filename = input("where would you like to save the data: ")
+          get_event_teams(team_num,season,filename)
     except ValueError:
         print("Invalid input. Please enter numeric values.")
         exit()
+def get_event_teams(team_num,season,filename):
+  query = f"""
+  query {{
+  teamByNumber(number: {team_num}) {{  # Replace 1234 with the actual team number you want to query
+    name
+    events(season: {season}){{
+      eventCode
+      event{{
+        teams{{
+          teamNumber
+        }}
+      }}
+    }}
+  }}
+}}
+    """
+  url = 'https://api.ftcscout.org/graphql' 
+  headers = {
+      'Content-Type': 'application/json', 
+  }
+
+  response = requests.post(url, headers=headers, json={'query': query})
+  if response.status_code == 200:
+    data = response.json()
+    events = data.get('data', {}).get('teamByNumber', {}).get('events', [])
+    seen_teams = set()
+    for event in events:
+      teams = event.get('event', {}).get('teams', [])
+      for team in teams:
+         team_number = team.get('teamNumber', 'N/A')
+         if team_number not in seen_teams:
+                    seen_teams.add(team_number)
+                    print(team_number)
+                    with open(filename, 'w') as file:
+                      for team_number in seen_teams:
+                        file.write(f"{team_number}\n")
 def main_function(team_num, season):
   query = f"""
   query {{
@@ -161,6 +202,11 @@ def main_function(team_num, season):
         total = round(total, 2)
         print(Fore.GREEN + f"Autonomous average: {auto},"+ Style.RESET_ALL, Fore.LIGHTMAGENTA_EX + f"Driver control average: {drivecont}," + Style.RESET_ALL, Fore.CYAN + f"Endgame average: {endgame}" + Style.RESET_ALL, Fore.YELLOW + f"Total average: {total}" + Style.RESET_ALL)
         print("*" * 50)
+  elif response.status_code == 429:  
+        wait_time = 2 ** attempt
+        print(f"Rate limited. Retrying in {wait_time} seconds...")
+        time.sleep(wait_time)
+        fetch_data(team_num, season, attempt + 1)
   else:
       print(f"Request failed with status code {response.status_code}")
       print(response.text)
