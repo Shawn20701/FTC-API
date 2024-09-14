@@ -4,6 +4,8 @@ import colorama
 from colorama import Back, Fore, Style
 import time
 import os
+import matplotlib.pyplot as plt
+import numpy as np
 colorama.init()
 def clear():
     if os.name == 'nt':
@@ -68,6 +70,99 @@ def get_event_teams(team_num,season,filename):
                     with open(filename, 'w') as file:
                       for team_number in seen_teams:
                         file.write(f"{team_number}\n")
+def retrieve_averages():
+  main_team = input("Please enter the team number you wish to compare: ")
+  season = input("which season do you want to pull data for: ")
+  query = (f"""
+    query {{
+  teamByNumber(number: {main_team}) {{  
+    name
+    quickStats(season: {season}) {{
+        auto {{
+          value
+        }}
+        dc {{
+          value
+        }}
+        eg {{
+          value
+        }}
+        tot {{
+          value
+        }}
+        count
+      }}
+      }}
+      }}
+    """)
+  url = 'https://api.ftcscout.org/graphql' 
+  headers = {
+      'Content-Type': 'application/json', 
+  }
+
+  response = requests.post(url, headers=headers, json={'query': query})
+  if response.status_code == 200:
+      data = response.json()
+      name = data.get('data', {}).get('teamByNumber', {}).get('name', '')
+      averages = data.get('data', {}).get('teamByNumber', {}).get('quickStats', {}).get('tot', {}).get('value', 0)
+      threshold = averages
+      time.sleep(3)
+  clear()
+  file = input("Where is the file located: ")
+  season = input(Fore.YELLOW + Style.BRIGHT + f"what season do you want to search for the file: " + Style.RESET_ALL)
+  with open(file) as f:
+    teams = [line.rstrip('\n') for line in f]
+  team_names = []
+  team_average = []
+  for line in teams:
+    team_num = line 
+    query = (f"""
+    query {{
+  teamByNumber(number: {team_num}) {{  
+    name
+    quickStats(season: {season}) {{
+        auto {{
+          value
+        }}
+        dc {{
+          value
+        }}
+        eg {{
+          value
+        }}
+        tot {{
+          value
+        }}
+        count
+      }}
+      }}
+      }}
+    """)
+    url = 'https://api.ftcscout.org/graphql' 
+    headers = {
+      'Content-Type': 'application/json', 
+  }
+
+    response = requests.post(url, headers=headers, json={'query': query})
+    if response.status_code == 200:
+      data = response.json()
+      name = data.get('data', {}).get('teamByNumber', {}).get('name', '')
+      team_names.append(name)
+      averages = data.get('data', {}).get('teamByNumber', {}).get('quickStats', {}).get('tot', {}).get('value', 0)
+      average_int = int(round(averages))
+      team_average.append(average_int)
+  sorted_data = sorted(zip(team_names, team_average), key=lambda x: x[1], reverse=True)
+  sorted_team_names, sorted_team_average = zip(*sorted_data)
+  plt.figure(plt.figure(figsize=(10, 6)))
+  colors = ['red' if avg < threshold else 'skyblue' for avg in sorted_team_average]
+  plt.scatter(sorted_team_names, sorted_team_average, color=colors, edgecolor='black')
+  plt.xlabel('Team Names')
+  plt.ylabel('Average Score')
+  plt.title('Team Averages')
+  plt.xticks(rotation=45, ha='right')
+  plt.tight_layout() 
+  plt.show()
+
 def main_function(team_num, season):
   query = f"""
   query {{
@@ -95,6 +190,7 @@ def main_function(team_num, season):
         alliance
         allianceRole
         onField
+        actualStartTime
         match {{
           id
           matchNum
@@ -212,12 +308,12 @@ def main_function(team_num, season):
       print(response.text)
 
 if __name__ == "__main__":
-  option = input("1. Read team numbers from file" "\n" "2. Input team number manually" "\n" "3. Exit" "\n" "Enter an option: ")
+  option = input("1. Read team numbers from file" "\n" "2. Input team number manually" "\n" "3. Retrieve Averages" "\n" "4. Exit" "\n""Enter an option: ")
   if option == "1":
     read_from_file()
   elif option == "2":
     input_data()
   elif option == "3":
-    exit()
+    retrieve_averages()
   else:
     exit()
