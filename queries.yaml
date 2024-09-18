@@ -1,0 +1,36 @@
+teamData:
+  query: |
+    query {
+        teamByNumber(number: $teamNumber) {
+            name
+            quickStats(season: $season) {
+                auto { value }
+                dc { value }
+                eg { value }
+                tot { value }
+                count
+            }
+        }
+    }
+teamAverages:
+  query: |
+    query {
+      teamByNumber(number: $teamNumber) {  
+          name
+          quickStats(season: $season) {
+              auto {
+                  value
+              }
+              dc {
+                  value
+              }
+              eg {
+                  value
+              }
+              tot {
+                  value
+              }
+              count
+          }
+      }
+    }
