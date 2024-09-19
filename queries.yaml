@@ -34,3 +34,75 @@ teamAverages:
           }
       }
     }
+Events:
+    query: |
+        query {
+            teamByNumber(number: $teamNumber) {  
+                name
+                events(season: $season) {
+                    eventCode
+                    event {
+                        teams {
+                            teamNumber
+                    }
+                }
+            }
+        }
+        }   
+Mainquery:
+    query: |
+        query {
+        teamByNumber(number: $teamNumber) {
+            name
+            quickStats(season: $season) {
+            auto {
+                value
+            }
+            dc {
+                value
+            }
+            eg {
+                value
+            }
+            tot {
+                value
+            }
+            count
+            }
+            matches(season: $season) {
+            teamNumber
+            eventCode
+            matchId
+            alliance
+            allianceRole
+            onField
+            match {
+                id
+                matchNum
+                season
+                eventCode
+                scores {
+                __typename
+                ... on MatchScores2023 {
+                    red {
+                    totalPoints
+                    }
+                    blue {
+                    totalPoints
+                    }
+                }
+                }
+                teams {
+                teamNumber
+                alliance
+                team {
+                    name
+                }
+                }
+                event {
+                name
+                }
+            }
+            }
+        }
+        }
