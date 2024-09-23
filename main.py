@@ -1,7 +1,7 @@
 from imports import *
 from classes import APIcalls, misc, main
-colorama.init()
 
+colorama.init()
 misc.clear()
 if __name__ == "__main__":
   option = input("1. Read team numbers from file" "\n" "2. Input team number manually" "\n" "3. Retrieve Averages" "\n" "4. Exit" "\n""Enter an option: ")
